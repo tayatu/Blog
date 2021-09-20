@@ -56,7 +56,6 @@ passport.use(new GoogleStrategy({
     callbackURL: "https://young-gorge-34969.herokuapp.com/auth/google/blog"
   },
   function(accessToken, refreshToken, profile, cb) {
-       console.log("hello 2");
     User.findOrCreate({ googleId: profile.id }, function (err, user) {
          console.log(profile.id);
       return cb(err, user);
@@ -80,7 +79,6 @@ app.get("/auth/google",
 app.get("/auth/google/blog",
   passport.authenticate('google', { failureRedirect: "/login" }),
   function(req, res) {
-       console.log("hello 5");
     res.redirect("/articles");
   });
 
@@ -126,54 +124,35 @@ app.get("/logout", function(req, res){
   res.redirect("/");
 });
 app.post("/register", function(req, res,err){
-     User.register({username: req.body.username}, req.body.password, function(err, user){
-       if (err) {
-            console.log("hiiii");
-         console.log(err);
-         res.redirect("/register");
-       } else {
-         passport.authenticate("local")(req, res, function(){
-           res.redirect("/articles");
-         });
-       }
+     if(err){
+          console.log(err);
+     }
+     let Users=new User({username : req.body.username});
+     var plainTextPassword=req.body.password;
+     var textUsername=req.body.username;
+
+     if(textUsername.length<=5){
+          errorMessage='Username must be of 6 characters' ;
+          flag=1;
+          res.render("register",{flag:flag ,errorMessage:errorMessage});
+     }
+	if (plainTextPassword.length < 5) {
+		 errorMessage ='Password should be atleast 6 characters';
+           flag=1;
+           res.render("register",{flag:flag ,errorMessage:errorMessage});
+	}
+     User.register(Users, req.body.password, function(err, user){
+          if (err) {
+               console.log(err);
+               flag=1;
+               errorMessage="User already exists";
+               res.render("register",{flag:flag ,errorMessage:errorMessage});
+          } else {
+               passport.authenticate("local")(req, res, function(){
+               res.redirect("/articles");
+               });
+          }
      });
-     // console.log("hiii1");
-     // if(err){
-     //      console.log("hiii2");
-     //      console.log(err);
-     // }
-     // console.log("hiii3");
-     // let Users=new User({username : req.body.username});
-     // var plainTextPassword=req.body.password;
-     // var textUsername=req.body.username;
-     //
-     // if(textUsername.length<=5){
-     //      errorMessage='Username must be of 6 characters' ;
-     //      flag=1;
-     //      res.render("register",{flag:flag ,errorMessage:errorMessage});
-     // }
-	// if (plainTextPassword.length < 5) {
-	// 	 errorMessage ='Password should be atleast 6 characters';
-     //       flag=1;
-     //       res.render("register",{flag:flag ,errorMessage:errorMessage});
-	// }
-     // console.log("hiii4");
-     // User.register(Users, req.body.password, function(err, user){
-     //      if (err) {
-     //           console.log("hiii5");
-     //           console.log(err);
-     //           flag=1;
-     //           errorMessage="User already exists";
-     //           res.render("register",{flag:flag ,errorMessage:errorMessage});
-     //      } else {
-     //           console.log("hiii6");
-     //           passport.authenticate("local")(req, res, function(){
-     //           res.redirect("/articles");
-     //           });
-     //      }
-     //      console.log("hiii7");
-     // });
-     // console.log("hiii8");
 });
 
 app.post("/login", function(req, res){
@@ -192,11 +171,9 @@ app.post("/login", function(req, res){
     }
 
   });
-        // flag=1;
-        // errorMessage="Invalid username/password";
-        // res.render("login",{flag:flag ,errorMessage:errorMessage});
 
 });
+
 app.use('/articles', articleRouter)
 
 let port=process.env.PORT;
